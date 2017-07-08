@@ -1,0 +1,257 @@
+---
+title: "Understanding Well-Being in the United States"
+author: "Gary Koplik"
+date: "July 8, 2017"
+output:
+  html_document:
+    theme: "readable"
+    usepackage: color
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
+In 2013, President Obama described income inequality as posing [“a fundamental threat to the American Dream.”](https://www.usatoday.com/story/news/politics/2013/12/04/obama-income-inequality-speech-center-for-american-progress/3867747/#)
+Income inequality is [on the rise](http://www.npr.org/sections/money/2014/10/02/349863761/40-years-of-income-inequality-in-america-in-graphs)
+in the United States, but does this also imply that there has been a decline in American individuals' well-being?
+
+Recent discussions of income inequality tend to equate a decrease in income inequality with an improvement in well-being, but this is not necessarily true in all circumstances. This begs the question: *what is well-being, and how do we quantify it?*
+
+One common way of looking at well-being is through median household income. Below is an interactive, county-level map of median household income in 2012 colored by quintiles. Click on a county for its income level.
+
+## Median Household Income (2012)
+
+```{r, message = F, warning = F}
+# load libraries
+library(shiny)
+library(shinyBS)
+library(leaflet)
+library(dplyr)
+library(albersusa)
+library(sp)
+library(htmlwidgets)
+```
+
+
+```{r, cache = T, message = F, warning = F, fig.width = 10}
+
+# median household income widget
+
+#### get all necessary data plot ready ####
+
+# load plot data
+load("../data/toplot.Rdata")
+
+toplot$USEFUL_FIPS <- as.character(toplot$USEFUL_FIPS)
+
+# load median household income data
+hhold_income <- read.csv("../data/median_hhold_income.csv",
+                         stringsAsFactors = F) %>%
+  select(USEFUL_FIPS,
+         "med_hhold_income" = Median.household.income..In.2013.Inflation.adjusted.dollars.)
+
+hhold_income$USEFUL_FIPS <- as.character(hhold_income$USEFUL_FIPS)
+
+toplot <- toplot %>%
+  left_join(hhold_income)
+
+# load county data
+
+temp <- counties_composite()
+
+# keeping temp as a reference because the simplification is slow
+#   if starting from scratch later
+county <- temp
+
+# join in the data into the counties shapefile
+
+# need the 01 values to turn to 1 to match csv data
+#   and match as a factor
+county$fips <- as.character(as.numeric(county$fips))
+
+# join in the toplot data
+county@data <- left_join(county@data, toplot,
+                         by = c("fips" = "USEFUL_FIPS"))
+
+# set colorpalette
+qpal <- colorQuantile(
+  palette = "RdBu",
+  domain = county@data[["med_hhold_income"]],
+  # reverse = T,
+  n = 5)
+
+# for changing the projection
+epsg2163 <- leafletCRS(
+  crsClass = "L.Proj.CRS",
+  code = "EPSG:2163",
+  # Lambert Azimuth Equal Area projection
+  proj4def = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs",
+  resolutions = 2^(16:7))
+
+
+# popup label for each county
+popup <- paste0(county@data$name, " County: ", "$",
+                county@data[["med_hhold_income"]])
+
+# make the map
+med_hhold_income <- leaflet(county,
+               options = leafletOptions(crs = epsg2163, minZoom = 3)) %>%
+  # add polygons of color
+  addPolygons(stroke = T,
+              fillOpacity = 1, color = "black", opacity = 1,
+              fillColor = ~qpal(county@data[["med_hhold_income"]]),
+              weight = 0.5,
+              popup = popup,
+              # popupOptions = popupOptions(),
+              highlightOptions = highlightOptions(color = "white",
+                                                  weight = 2,
+                                                  bringToFront = TRUE)) %>%
+  # add legend
+  #   the function in here is a result of the numbers not
+  #     representing the actual cut points
+  # see https://github.com/rstudio/leaflet/issues/211
+  addLegend(pal = qpal,
+            values = county@data[["med_hhold_income"]],
+            labFormat = function(type, cuts, p) {
+              n = length(cuts)
+              # cuts_before <<- cuts
+              # cuts <<- cuts
+              cuts = round(cuts, digits = 2)
+              # cuts_after <<- cuts
+              paste0("$", cuts[-n], " &ndash; ", "$", cuts[-1])
+            },
+            title = "Median Household Income (2012)",
+            opacity = 1) %>%
+  # specify starting viewpoint
+  setView(lng = -90, lat = 37.5, zoom = 3)
+
+med_hhold_income
+```
+
+\
+\
+
+Quantifying well-being is by no means an unexplored topic. Two more complex examples of quantifying well-being are through [health outcomes](http://www.countyhealthrankings.org/) and [a weighted aggregation of economic indicators](http://onlinelibrary.wiley.com/doi/10.1111/1475-4991.00056/epdf).
+
+Below, I include an example based on four variables:
+
+- Unemployment (from the Bureau of Labor Statistics 2012)
+
+- Poverty (from the U.S. Census Bureau 2012)
+
+- Obesity (from the Centers for Disease Control 2012)
+
+- Population that Did Not Finish High School (from the American Community Survey 2009 - 2013)
+
+By breaking each of these variables into quantiles and thus standardizing each variable's units, we can look at counties' relative well-being with respect to multiple variables rather than just one.
+
+When using multiple variables, however, another important question arises: *how do we decide on weightings?*
+
+One way is to simply weight all variables equally. Below is a map of counties' relative well-being with respect to these four variables weighting each variable equally. Counties in blue are **<span style="color:blue">above average</span>** and counties in red are **<span style="color:red">below average</span>**. To see a county's specific values, click on the county of interest.
+
+## Index of Well-Being (2012)
+
+```{r, message = F, warning = F, fig.width = 10, cache = T}
+
+rm(list = ls())
+
+# load plot data
+load("../data/toplot.Rdata")
+
+# load county data
+
+temp <- counties_composite()
+
+# keeping temp as a reference because the simplification is slow
+#   if starting from scratch later
+county <- temp
+
+# join in the data into the counties shapefile
+
+# need the 01 values to turn to 1 to match csv data
+#   and match as a factor
+county$fips <- as.factor(as.numeric(county$fips))
+
+# join in the toplot data
+county@data <- left_join(county@data, toplot,
+                         by = c("fips" = "USEFUL_FIPS"))
+
+# set colorpalette
+qpal <- colorBin(
+  palette = "RdBu",
+  domain = county@data[["Total.Index.Value"]],
+  bins = c(1, 2, 3, 4, 5, 6),
+  reverse = T)
+
+# for changing the projection
+epsg2163 <- leafletCRS(
+  crsClass = "L.Proj.CRS",
+  code = "EPSG:2163",
+  # Lambert Azimuth Equal Area projection
+  proj4def = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs",
+  resolutions = 2^(16:7))
+
+
+# popup label for each county
+# <strong> bolds text and <br/> goes to the next line
+popup <- paste0("<strong>", county@data$name, " County", "</strong>",
+                "<br/> Index Value: ",
+                  county@data[["Total.Index.Value"]],
+                "<br/> Obesity: ",
+                  county@data[["Obesity"]], "%",
+                "<br/> Percent With No High School Diploma: ",
+                  county@data[["Percent_Less_Than_High_School"]], "%",
+                "<br/> Poverty: ",
+                  county@data[["Poverty.Percent..All.Ages"]], "%",
+                "<br/> Unemployment: ",
+                county@data[["Unemployment.Rate"]], "%"
+                )
+
+# make the map
+map <- leaflet(county,
+               options = leafletOptions(crs = epsg2163, minZoom = 3)) %>%
+  # add polygons of color
+  addPolygons(stroke = T,
+              fillOpacity = 1, color = "black", opacity = 1,
+              fillColor = ~qpal(county@data[["Total.Index.Value"]]),
+              weight = 0.5,
+              popup = popup,
+              # popupOptions = popupOptions(),
+              highlightOptions = highlightOptions(color = "white",
+                                                  weight = 2,
+                                                  bringToFront = TRUE)) %>%
+  # add legend
+  #   the function in here is a result of the numbers not
+  #     representing the actual cut points
+  # see https://github.com/rstudio/leaflet/issues/211
+  addLegend(pal = qpal,
+            values = county@data[["Total.Index.Value"]],
+            labFormat = function(type, cuts, p) {
+              n = length(cuts)
+              cuts = round(cuts, digits = 2)
+              paste0(cuts[-n], " &ndash; ", cuts[-1])
+            },
+            title = "Index Value",
+            opacity = 1) %>%
+  # specify starting viewpoint
+  setView(lng = -90, lat = 37.5, zoom = 3)
+
+
+map
+```
+
+\
+\
+
+Comparing this Index Map to the Median Household Income Map, there are some glaring differences in implied relative well-being. In particular, note how much worse California and Alaska appear using the Index. Also, note the stronghold of dark blue that stretches from southern Maine to Northern Virginia on the Median Household Income Map breaks apart using the Index, although the area does maintain an above average relative well-being. Finally, it is worth noting that there are areas that look the same under...(line truncated)...
+
+It's safe to say that many factors play a role in an individual's overall well-being; however, there is inevitably a highly subjective component in weighting these factors to create an Index of Well-Being, regardless of which factors are included. Rather than make my own assumptions, I instead propose an interface that allows the user to decide on these weights.
+
+I have created an interactive visualization tool that allows users to subjectively explore well-being in the United States at the county level by choosing their own weightings for these four variables.
+**[See for yourself!](https://gary-koplik.shinyapps.io/index_of_well_being_shiny/)**
+
+Although there are only four variables for the user to choose from so far, it would be easy to add more county-level data as well as multiple years of data and incorporate it into this interface. By assembling various additional measures of quality of life such as economic, health, crime, education, psychological, and environmental components, users would be able visually explore the interactions of different components of well-being and weighting them as they see fit. $\hspace{4ex} _\blacksquare$
+
+\
+\
