@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = F)
 ```
 
-In 2013, President Obama described income inequality as posing [“a fundamental threat to the American Dream.”](https://www.usatoday.com/story/news/politics/2013/12/04/obama-income-inequality-speech-center-for-american-progress/3867747/#)
+In 2013, President Obama described income inequality as posing [a fundamental threat to the American Dream.](https://www.usatoday.com/story/news/politics/2013/12/04/obama-income-inequality-speech-center-for-american-progress/3867747/#)
 Income inequality is [on the rise](http://www.npr.org/sections/money/2014/10/02/349863761/40-years-of-income-inequality-in-america-in-graphs)
 in the United States, but does this imply that there has been a decline in American individuals' well-being?
 
@@ -40,12 +40,12 @@ library(htmlwidgets)
 #### get all necessary data plot ready ####
 
 # load plot data
-load("../data/toplot.Rdata")
+load("./data/toplot.Rdata")
 
 toplot$USEFUL_FIPS <- as.character(toplot$USEFUL_FIPS)
 
 # load median household income data
-hhold_income <- read.csv("../data/median_hhold_income.csv",
+hhold_income <- read.csv("./data/median_hhold_income.csv",
                          stringsAsFactors = F) %>%
   select(USEFUL_FIPS,
          "med_hhold_income" = Median.household.income..In.2013.Inflation.adjusted.dollars.)
@@ -156,7 +156,7 @@ One way is to simply weight all variables equally. Below is a map of counties' r
 rm(list = ls())
 
 # load plot data
-load("../data/toplot.Rdata")
+load("./data/toplot.Rdata")
 
 # load county data
 
