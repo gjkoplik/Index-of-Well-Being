@@ -33,12 +33,6 @@ dat$County <- tolower(str_sub(dat$County, end = -8))
 dat <- plyr::rename(dat, c("County" = "subregion"))
 
 
-
-
-
-
-
-
 # testing what format the data will need to be in
 #   to make maps
 
@@ -47,6 +41,8 @@ dat <- plyr::rename(dat, c("County" = "subregion"))
 
 # and github
 # http://eriqande.github.io/rep-res-web/lectures/making-maps-with-R.html
+
+# settled on this format:
 
 # counties shapefile
 counties <- map_data("county")
@@ -62,13 +58,14 @@ statebounds <- map_data("state")
 # need uniqueness of state + county (because county names repeat)
 dat$State <- tolower(dat$State)
 
-# temporary removing this
+# removing this for leaflet purposes
 # NOTE: this leftjoin screws up leaflet but works for ggplot
 # toplot <- left_join(dat, counties,
 #                     by = c("subregion" = "subregion",
 #                            "State" = "region"))
 
-# temporarily adding this
+# giving data set "more informative" name for later
+#   at least it's better than "dat"...
 toplot <- dat
 
 # rename toplot and counties values so rollover values look better
