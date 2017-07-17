@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = F)
 ```
 
-In 2013, President Obama described income inequality as posing [a fundamental threat to the American Dream.](https://www.usatoday.com/story/news/politics/2013/12/04/obama-income-inequality-speech-center-for-american-progress/3867747/#)
+In 2013, President Obama described income inequality as posing ["a fundamental threat to the American Dream."](https://www.usatoday.com/story/news/politics/2013/12/04/obama-income-inequality-speech-center-for-american-progress/3867747/#)
 Income inequality is [on the rise](http://www.npr.org/sections/money/2014/10/02/349863761/40-years-of-income-inequality-in-america-in-graphs)
 in the United States, but does this imply that there has been a decline in American individuals' well-being?
 
@@ -250,7 +250,7 @@ It's safe to say that many factors play a role in an individual's overall well-b
 I have created an interactive visualization tool that allows users to subjectively explore well-being in the United States at the county level by choosing their own weightings for these four variables.
 **[See for yourself!](https://gary-koplik.shinyapps.io/index_of_well_being_shiny/)**
 
-Although there are only four variables for the user to choose from so far, it would be easy to add more county-level data as well as multiple years of data and incorporate it into this interface. By assembling various additional measures of quality of life such as economic, health, crime, education, psychological, and environmental components, users would be able visually explore the interactions of different components of well-being and weighting them as they see fit. $\hspace{4ex} _\blacksquare$
+Although there are only four variables for the user to choose from so far, it would be easy to include multiple years of data in this interface. Furthermore, by including additional variables such as economic, health, crime, education, psychological, and environmental components, users would be able to visually explore interactions between these features and weigh them as they see fit. $\hspace{4ex} _\blacksquare$
 
 \
 \
