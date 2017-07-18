@@ -91,7 +91,8 @@ epsg2163 <- leafletCRS(
 
 # popup label for each county
 popup <- paste0(county@data$name, " County: ", "$",
-                county@data[["med_hhold_income"]])
+                formatC(county@data[["med_hhold_income"]],
+                        big.mark = ",", format = "f", digits = 0))
 
 # make the map
 med_hhold_income <- leaflet(county,
@@ -116,7 +117,7 @@ med_hhold_income <- leaflet(county,
               n = length(cuts)
               # cuts_before <<- cuts
               # cuts <<- cuts
-              cuts = round(cuts, digits = 2)
+              cuts = formatC(round(cuts, digits = 2), digits = 0, big.mark = ",", format = "f")
               # cuts_after <<- cuts
               paste0("$", cuts[-n], " &ndash; ", "$", cuts[-1])
             },
